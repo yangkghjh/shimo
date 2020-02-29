@@ -1,8 +1,8 @@
-import axios from 'axios';
-import { config } from './config.js';
-import Path from 'path';
-import download from 'download';
-import sleep from 'await-sleep';
+const axios = require('axios');
+const Path = require('path');
+const download = require('download');
+const sleep = require('await-sleep');
+const config = require('./config.js');
 
 getFileList(config.Folder, config.Path);
 
