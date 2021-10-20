@@ -18,16 +18,27 @@ async function getFileList(folder = '', basePath = '') {
 
         for (let i = 0; i < response.data.length; i++) {
             let item = response.data[i];
-            console.log(item.name, item.type);
-            if (item.is_folder != 1) {
-                await createExportTask(item, basePath);
-            } else {
-                if (config.Recursive) {
-                    await getFileList(item.guid, Path.join(basePath, item.name));
+            let atime = new Date(item.updatedAt).getTime();
+            //console.log(atime);
+            if(atime > config.lasttime){
+            //console.log('i love you baby!');
+            //if(item.updatedAt == '2021-10-20T09:52:40.000Z'){
+               //console.log(item.updatedAt,'chenggonglelelelelelelelelelel');
+          //  }
+                console.log(item.name, item.type,item.updatedAt);
+                if (item.is_folder != 1) {
+                    await createExportTask(item, basePath);
+                } else {
+                    if (config.Recursive) {
+                        await getFileList(item.guid, Path.join(basePath, item.name));
+                    }
                 }
+                // process.exit();
+                await sleep(config.Sleep);
+            }else{
+                console.log('the end');
+                process.exit();
             }
-            // process.exit();
-            await sleep(config.Sleep);
         }
     } catch (error) {
         console.error(error);
