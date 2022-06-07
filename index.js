@@ -17,15 +17,16 @@ async function getFileList(folder = '', basePath = '') {
         });
 
         for (let i = 0; i < response.data.length; i++) {
+            await sleep(config.Sleep);
             let item = response.data[i];
             let atime = new Date(item.updatedAt).getTime();
             //console.log(atime);
-            if(atime > config.lasttime){
-            //console.log('i love you baby!');
-            //if(item.updatedAt == '2021-10-20T09:52:40.000Z'){
-               //console.log(item.updatedAt,'chenggonglelelelelelelelelelel');
-          //  }
-                console.log(item.name, item.type,item.updatedAt);
+            if (atime > config.lasttime) {
+                //console.log('i love you baby!');
+                //if(item.updatedAt == '2021-10-20T09:52:40.000Z'){
+                //console.log(item.updatedAt,'chenggonglelelelelelelelelelel');
+                //  }
+                console.log(item.name, item.type, item.updatedAt);
                 if (item.is_folder != 1) {
                     await createExportTask(item, basePath);
                 } else {
@@ -34,8 +35,7 @@ async function getFileList(folder = '', basePath = '') {
                     }
                 }
                 // process.exit();
-                await sleep(config.Sleep);
-            }else{
+            } else {
                 console.log('the end');
                 process.exit();
             }
@@ -99,9 +99,18 @@ async function createExportTask(item, basePath = '') {
             console.error(item.name + ' failed, error: ', response.data);
             return;
         }
-        await download(response.data.redirectUrl, basePath);
+        const options = {
+            headers: {
+                Cookie: config.Cookie,
+                Referer: 'https://shimo.im/folder/123',
+            }
+        };
+        await download(response.data.redirectUrl, basePath, options);
     } catch (error) {
         console.error(item.name + ' failed, error: ' + error.message);
+        console.error("retry...");
+        await sleep(config.Sleep * 2);
+        await createExportTask(item, basePath);
     }
 }
 
