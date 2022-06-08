@@ -30,7 +30,7 @@ async function getFileList(folder = '', basePath = '') {
                 console.log(item.name, item.type, item.updatedAt);
                 if (item.is_folder != 1) {
                     for (let j = 1; j <= config.Retry; j++) {
-                        const res = createExportTask(item, basePath);
+                        const res = await createExportTask(item, basePath);
                         if (res != 0) {
                             console.error("retry " + j + " times...");
                             await sleep(config.Sleep * 2);
