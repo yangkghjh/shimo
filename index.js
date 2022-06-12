@@ -3,6 +3,10 @@ const Path = require('path');
 const download = require('download');
 const sleep = require('await-sleep');
 const config = require('./config.js');
+const headersOptions = {
+    Cookie: config.Cookie,
+    Referer: 'https://shimo.im/folder/123',
+};
 
 getFileList(config.Folder, config.Path);
 
@@ -10,32 +14,37 @@ async function getFileList(folder = '', basePath = '') {
     try {
         const response = await axios.get('https://shimo.im/lizard-api/files', {
             params: { collaboratorCount: 'true', folder: folder },
-            headers: {
-                Cookie: config.Cookie,
-                Referer: 'https://shimo.im/folder/0iCyDyntLp8h0JDn',
-            }
+            headers: headersOptions
         });
 
         for (let i = 0; i < response.data.length; i++) {
+            await sleep(config.Sleep);
             let item = response.data[i];
             let atime = new Date(item.updatedAt).getTime();
             //console.log(atime);
-            if(atime > config.lasttime){
-            //console.log('i love you baby!');
-            //if(item.updatedAt == '2021-10-20T09:52:40.000Z'){
-               //console.log(item.updatedAt,'chenggonglelelelelelelelelelel');
-          //  }
-                console.log(item.name, item.type,item.updatedAt);
+            if (atime > config.Lasttime) {
+                //console.log('i love you baby!');
+                //if(item.updatedAt == '2021-10-20T09:52:40.000Z'){
+                //console.log(item.updatedAt,'chenggonglelelelelelelelelelel');
+                //  }
+                console.log(item.name, item.type, item.updatedAt);
                 if (item.is_folder != 1) {
-                    await createExportTask(item, basePath);
+                    for (let j = 1; j <= config.Retry; j++) {
+                        const res = await createExportTask(item, basePath);
+                        if (res != 0) {
+                            console.error("retry " + j + " times...");
+                            await sleep(config.Sleep * 2);
+                        } else {
+                            break;
+                        }
+                    }
                 } else {
                     if (config.Recursive) {
                         await getFileList(item.guid, Path.join(basePath, item.name));
                     }
                 }
                 // process.exit();
-                await sleep(config.Sleep);
-            }else{
+            } else {
                 console.log('the end');
                 process.exit();
             }
@@ -56,25 +65,10 @@ async function createExportTask(item, basePath = '') {
         } else if (item.type == 'slide') {
             type = 'pptx';
         } else if (item.type == 'mindmap') {
-            const response = await axios.get('https://shimo.im/lizard-api/files/' + item.guid + '?contentUrl=true', {
-                headers: {
-                    Cookie: config.Cookie,
-                    Referer: 'https://shimo.im/folder/123',
-                }
-            });
-
-            if (!response.data.contentUrl) {
-                console.error(item.name, response.data);
-                return;
-            }
-
-            let url = 'https://shimo.im/api/mindmap/exports?url=' + encodeURIComponent(response.data.contentUrl) + '&format=xmind&name=' + encodeURIComponent(name);
-            // console.log(url, Path.join(config.Path, basePath));
-            await download(url, basePath);
-            return;
+            type = 'xmind';
         } else {
-            console.log('unsupport type: ' + item.type);
-            return;
+            console.error('unsupport type: ' + item.type);
+            return 1;
         }
 
         const url = 'https://shimo.im/lizard-api/files/' + item.guid + '/export';
@@ -87,22 +81,24 @@ async function createExportTask(item, basePath = '') {
                 name: name,
                 isAsync: '0'
             },
-            headers: {
-                Cookie: config.Cookie,
-                Referer: 'https://shimo.im/folder/123',
-            }
+            headers: headersOptions
         });
 
         // console.log(name, response.data)
         // console.log(response.data.redirectUrl, Path.join(config.Path, basePath));
         if (!response.data.redirectUrl) {
             console.error(item.name + ' failed, error: ', response.data);
-            return;
+            return 2;
         }
-        await download(response.data.redirectUrl, basePath);
+        const options = {
+            headers: headersOptions
+        };
+        await download(response.data.redirectUrl, basePath, options);
     } catch (error) {
         console.error(item.name + ' failed, error: ' + error.message);
+        return 3;
     }
+    return 0;
 }
 
 function replaceBadChar(fileName) {

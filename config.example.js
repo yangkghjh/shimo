@@ -4,5 +4,6 @@ module.exports = {
     Folder: '', // 需要导出的文件夹 ID，从浏览器地址栏获取，https://shimo.im/folder/xxx 中 xxx，全部导出则留空
     Recursive: false, // 是否导出子目录
     Sleep: 1000, // 导出两个文档间的时间间隔，必须设置，否则会服务器忙，单位 ms
-    lasttime: 0  //timeship you copy file(run this tool) last time, default 0 means to copy all files this time.
+    Lasttime: 0,  // timeship you copy file(run this tool) last time, default 0 means to copy all files this time.
+    Retry: 3  // 重试次数
 };
