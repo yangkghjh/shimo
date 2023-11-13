@@ -58,42 +58,55 @@ async function createExportTask(item, basePath = '') {
     try {
         let type = '';
         const name = replaceBadChar(item.name);
-        if (item.type == 'newdoc' || item.type == 'document') {
-            type = 'docx';
-        } else if (item.type == 'sheet' || item.type == 'mosheet' || item.type == 'spreadsheet') {
-            type = 'xlsx';
-        } else if (item.type == 'slide') {
-            type = 'pptx';
-        } else if (item.type == 'mindmap') {
-            type = 'xmind';
-        } else {
-            console.error('unsupport type: ' + item.type);
-            return 1;
+        let downloadUrl = '';
+        if (item.type == 'docx' || item.type == 'doc' ||
+            item.type == 'pptx' || item.type == 'ppt')
+        {
+            downloadUrl = 'https://shimo.im/lizard-api/files/' + item.guid + '/download';
         }
+        else
+        {
+            if (item.type == 'newdoc' || item.type == 'document' || item.type == 'modoc') {
+                type = 'docx';
+            } else if (item.type == 'sheet' || item.type == 'mosheet' || item.type == 'spreadsheet') {
+                type = 'xlsx';
+            } else if (item.type == 'slide') {
+                type = 'pptx';
+            } else if (item.type == 'mindmap') {
+                type = 'xmind';
+            } else {
+                console.error('unsupport type: ' + item.type);
+                return 1;
+            }
 
-        const url = 'https://shimo.im/lizard-api/files/' + item.guid + '/export';
+            const url = 'https://shimo.im/lizard-api/files/' + item.guid + '/export';
 
-        const response = await axios.get(url, {
-            params: {
-                type: type,
-                file: item.guid,
-                returnJson: '1',
-                name: name,
-                isAsync: '0'
-            },
-            headers: headersOptions
-        });
+            const response = await axios.get(url, {
+                params: {
+                    type: type,
+                    file: item.guid,
+                    returnJson: '1',
+                    name: name,
+                    isAsync: '0'
+                },
+                headers: headersOptions
+            });
 
-        // console.log(name, response.data)
-        // console.log(response.data.redirectUrl, Path.join(config.Path, basePath));
-        if (!response.data.redirectUrl) {
+            //console.log(name, response.data)
+            // console.log(response.data.redirectUrl, Path.join(config.Path, basePath));
+            downloadUrl = response.data.redirectUrl;
+            if (!downloadUrl) {
+                downloadUrl = response.data.data.downloadUrl;
+            }
+        }
+        if (!downloadUrl) {
             console.error(item.name + ' failed, error: ', response.data);
             return 2;
         }
         const options = {
             headers: headersOptions
         };
-        await download(response.data.redirectUrl, basePath, options);
+        await download(downloadUrl, basePath, options);
     } catch (error) {
         console.error(item.name + ' failed, error: ' + error.message);
         return 3;
