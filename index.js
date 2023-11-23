@@ -7,14 +7,19 @@ const headersOptions = {
     Cookie: config.Cookie,
     Referer: 'https://shimo.im/folder/123',
 };
+const desktopHeadersOptions = {
+    Cookie: config.Cookie,
+    Referer: 'https://shimo.im/desktop',
+};
 
 getFileList(config.Folder, config.Path);
 
 async function getFileList(folder = '', basePath = '') {
     try {
+        const paramsOptions = folder ? { collaboratorCount: 'true', folder: folder } : { collaboratorCount: 'true' };
         const response = await axios.get('https://shimo.im/lizard-api/files', {
-            params: { collaboratorCount: 'true', folder: folder },
-            headers: headersOptions
+            params: paramsOptions,
+            headers: folder ? headersOptions : desktopHeadersOptions
         });
 
         for (let i = 0; i < response.data.length; i++) {
