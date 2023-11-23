@@ -34,14 +34,19 @@ async function getFileList(folder = '', basePath = '') {
                 //  }
                 console.log(item.name, item.type, item.updatedAt);
                 if (item.is_folder != 1) {
-                    for (let j = 1; j <= config.Retry; j++) {
-                        const res = await createExportTask(item, basePath);
-                        if (res != 0) {
+                    let res = -1;
+                    for (let j = 0; j <= config.Retry; j++) {
+                        if (j > 0) {
                             console.error("retry " + j + " times...");
                             await sleep(config.Sleep * 2);
-                        } else {
+                        }
+                        res = await createExportTask(item, basePath);
+                        if (res == 0 || res == 1) {
                             break;
                         }
+                    }
+                    if (res != 0) {
+                        console.error('[Error] Failed to export: ' + item.name);
                     }
                 } else {
                     if (config.Recursive) {
@@ -55,7 +60,7 @@ async function getFileList(folder = '', basePath = '') {
             }
         }
     } catch (error) {
-        console.error(error);
+        console.error('[Error] ' + error);
     }
 }
 
@@ -65,7 +70,8 @@ async function createExportTask(item, basePath = '') {
         const name = replaceBadChar(item.name);
         let downloadUrl = '';
         if (item.type == 'docx' || item.type == 'doc' ||
-            item.type == 'pptx' || item.type == 'ppt')
+            item.type == 'pptx' || item.type == 'ppt' ||
+            item.type == 'pdf')
         {
             downloadUrl = 'https://shimo.im/lizard-api/files/' + item.guid + '/download';
         }
@@ -75,12 +81,12 @@ async function createExportTask(item, basePath = '') {
                 type = 'docx';
             } else if (item.type == 'sheet' || item.type == 'mosheet' || item.type == 'spreadsheet') {
                 type = 'xlsx';
-            } else if (item.type == 'slide') {
+            } else if (item.type == 'slide' || item.type == 'presentation') {
                 type = 'pptx';
             } else if (item.type == 'mindmap') {
                 type = 'xmind';
             } else {
-                console.error('unsupport type: ' + item.type);
+                console.error('[Error] ' + item.name + ' has unsupported type: ' + item.type);
                 return 1;
             }
 
@@ -105,7 +111,7 @@ async function createExportTask(item, basePath = '') {
             }
         }
         if (!downloadUrl) {
-            console.error(item.name + ' failed, error: ', response.data);
+            console.error('[Error] ' + item.name + ' failed, error: ', response.data);
             return 2;
         }
         const options = {
@@ -113,7 +119,7 @@ async function createExportTask(item, basePath = '') {
         };
         await download(downloadUrl, basePath, options);
     } catch (error) {
-        console.error(item.name + ' failed, error: ' + error.message);
+        console.error('[Error] ' + item.name + ' failed, error: ' + error.message);
         return 3;
     }
     return 0;
