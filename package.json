@@ -2,6 +2,9 @@
   "name": "shimo",
   "version": "1.0.0",
   "main": "index.js",
+  "scripts": {
+    "build": "pkg index.js --output shimoExporter"
+  },
   "license": "MIT",
   "dependencies": {
     "await-sleep": "^0.0.1",
