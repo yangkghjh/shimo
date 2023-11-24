@@ -7,7 +7,16 @@
 - 思维导图
 - 幻灯片
 
-## Usage
+## Usage with exe
+
+1. 下载 shimoExporter.exe
+2. 下载 config.example.json, 并重命名为 config.json
+3. 在浏览器中登录石墨文档, 并使用 F12(开发者模式) 获取网页 Cookie
+4. 将网页 Cookie 粘贴到 config.json 的"Cookie"字段中
+5. 修改 config.json 的"Path"字段为导出文档的保存路径
+6. 运行 shimoExporter.exe
+
+## Usage with NodeJS
 
 填写配置文件
 
