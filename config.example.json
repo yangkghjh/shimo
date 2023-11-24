@@ -1,52 +1,16 @@
-# 石墨文档批量导出
-
-支持类型
-
-- 文档
-- 表格
-- 思维导图
-- 幻灯片
-
-## Usage
-
-填写配置文件
-
-```shell
-cp config.example.json config.json
-```
-
-```config.json
 {
     "@Cookie": "从浏览器中获取石墨文档的 Cookie",
+    "Cookie": "xxx",
     "@Path": "存放导出文档的位置",
+    "Path": "F:/shimoExport/Export",
     "@Folder": "需要导出的文件夹 ID，从浏览器地址栏获取，https://shimo.im/folder/xxx 中 xxx，全部导出则留空",
+    "Folder": "",
     "@Recursive": "是否导出子目录",
+    "Recursive": true,
     "@Sleep": "导出两个文档间的时间间隔，必须设置，否则会服务器忙，单位 ms",
+    "Sleep": 500,
     "@Lasttime": "timeship you copy file(run this tool) last time, default 0 means to copy all files this time.",
+    "Lasttime": 0,
     "@Retry": "重试次数",
+    "Retry": 3
 }
-```
-
-安装依赖
-
-```shell
-yarn // or npm install
-```
-
-运行
-
-```shell
-node index.js
-```
-
-导出可执行文件
-
-```shell
-npm run build
-```
-
-## 依赖
-
-```
-node ^13
-```

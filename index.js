@@ -2,7 +2,18 @@ const axios = require('axios');
 const Path = require('path');
 const download = require('download');
 const sleep = require('await-sleep');
-const config = require('./config.js');
+const fs = require('fs');
+let config = {};
+let fileData = fs.readFileSync('config.json', 'utf8');
+try {
+    config = JSON.parse(fileData);
+    // console.log('config: ', config);
+    console.log('Path: ', config.Path);
+    console.log('Folder: ', config.Folder);
+} catch (err) {
+    console.error('解析配置文件出错:', err);
+}
+// const config = require('./config.js');
 const headersOptions = {
     Cookie: config.Cookie,
     Referer: 'https://shimo.im/folder/123',
