@@ -2,19 +2,35 @@ const axios = require('axios');
 const Path = require('path');
 const download = require('download');
 const sleep = require('await-sleep');
-const config = require('./config.js');
+const fs = require('fs');
+let config = {};
+let fileData = fs.readFileSync('config.json', 'utf8');
+try {
+    config = JSON.parse(fileData);
+    // console.log('config: ', config);
+    console.log('Path: ', config.Path);
+    console.log('Folder: ', config.Folder);
+} catch (err) {
+    console.error('解析配置文件出错:', err);
+}
+// const config = require('./config.js');
 const headersOptions = {
     Cookie: config.Cookie,
     Referer: 'https://shimo.im/folder/123',
+};
+const desktopHeadersOptions = {
+    Cookie: config.Cookie,
+    Referer: 'https://shimo.im/desktop',
 };
 
 getFileList(config.Folder, config.Path);
 
 async function getFileList(folder = '', basePath = '') {
     try {
+        const paramsOptions = folder ? { collaboratorCount: 'true', folder: folder } : { collaboratorCount: 'true' };
         const response = await axios.get('https://shimo.im/lizard-api/files', {
-            params: { collaboratorCount: 'true', folder: folder },
-            headers: headersOptions
+            params: paramsOptions,
+            headers: folder ? headersOptions : desktopHeadersOptions
         });
 
         for (let i = 0; i < response.data.length; i++) {
@@ -29,14 +45,19 @@ async function getFileList(folder = '', basePath = '') {
                 //  }
                 console.log(item.name, item.type, item.updatedAt);
                 if (item.is_folder != 1) {
-                    for (let j = 1; j <= config.Retry; j++) {
-                        const res = await createExportTask(item, basePath);
-                        if (res != 0) {
+                    let res = -1;
+                    for (let j = 0; j <= config.Retry; j++) {
+                        if (j > 0) {
                             console.error("retry " + j + " times...");
                             await sleep(config.Sleep * 2);
-                        } else {
+                        }
+                        res = await createExportTask(item, basePath);
+                        if (res == 0 || res == 1) {
                             break;
                         }
+                    }
+                    if (res != 0) {
+                        console.error('[Error] Failed to export: ' + item.name);
                     }
                 } else {
                     if (config.Recursive) {
@@ -50,7 +71,7 @@ async function getFileList(folder = '', basePath = '') {
             }
         }
     } catch (error) {
-        console.error(error);
+        console.error('[Error] ' + error);
     }
 }
 
@@ -58,44 +79,58 @@ async function createExportTask(item, basePath = '') {
     try {
         let type = '';
         const name = replaceBadChar(item.name);
-        if (item.type == 'newdoc' || item.type == 'document') {
-            type = 'docx';
-        } else if (item.type == 'sheet' || item.type == 'mosheet' || item.type == 'spreadsheet') {
-            type = 'xlsx';
-        } else if (item.type == 'slide') {
-            type = 'pptx';
-        } else if (item.type == 'mindmap') {
-            type = 'xmind';
-        } else {
-            console.error('unsupport type: ' + item.type);
-            return 1;
+        let downloadUrl = '';
+        if (item.type == 'docx' || item.type == 'doc' ||
+            item.type == 'pptx' || item.type == 'ppt' ||
+            item.type == 'pdf')
+        {
+            downloadUrl = 'https://shimo.im/lizard-api/files/' + item.guid + '/download';
         }
+        else
+        {
+            if (item.type == 'newdoc' || item.type == 'document' || item.type == 'modoc') {
+                type = 'docx';
+            } else if (item.type == 'sheet' || item.type == 'mosheet' || item.type == 'spreadsheet') {
+                type = 'xlsx';
+            } else if (item.type == 'slide' || item.type == 'presentation') {
+                type = 'pptx';
+            } else if (item.type == 'mindmap') {
+                type = 'xmind';
+            } else {
+                console.error('[Error] ' + item.name + ' has unsupported type: ' + item.type);
+                return 1;
+            }
 
-        const url = 'https://shimo.im/lizard-api/files/' + item.guid + '/export';
+            const url = 'https://shimo.im/lizard-api/files/' + item.guid + '/export';
 
-        const response = await axios.get(url, {
-            params: {
-                type: type,
-                file: item.guid,
-                returnJson: '1',
-                name: name,
-                isAsync: '0'
-            },
-            headers: headersOptions
-        });
+            const response = await axios.get(url, {
+                params: {
+                    type: type,
+                    file: item.guid,
+                    returnJson: '1',
+                    name: name,
+                    isAsync: '0'
+                },
+                headers: headersOptions
+            });
 
-        // console.log(name, response.data)
-        // console.log(response.data.redirectUrl, Path.join(config.Path, basePath));
-        if (!response.data.redirectUrl) {
-            console.error(item.name + ' failed, error: ', response.data);
+            //console.log(name, response.data)
+            // console.log(response.data.redirectUrl, Path.join(config.Path, basePath));
+            downloadUrl = response.data.redirectUrl;
+            if (!downloadUrl) {
+                downloadUrl = response.data.data.downloadUrl;
+            }
+        }
+        if (!downloadUrl) {
+            console.error('[Error] ' + item.name + ' failed, error: ', response.data);
             return 2;
         }
         const options = {
             headers: headersOptions
         };
-        await download(response.data.redirectUrl, basePath, options);
+        await download(downloadUrl, basePath, options);
     } catch (error) {
-        console.error(item.name + ' failed, error: ' + error.message);
+        console.error('[Error] ' + item.name + ' failed, error: ' + error.message);
         return 3;
     }
     return 0;
