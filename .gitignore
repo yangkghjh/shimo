@@ -2,3 +2,6 @@
 /config.json
 
 files*
+.vscode
+shimo
+config*.json
