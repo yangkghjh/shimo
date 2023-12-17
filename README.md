@@ -54,6 +54,19 @@ node index.js
 npm run build
 ```
 
+导出 markdown 文档
+
+如果想导出 markdown 文档，将`index.js` 中 `type = 'docx'` 改为 `type = 'md'`即可
+
+多配置文件
+
+如果有多个目录需要导出，可以配置多个配置文件。运行时指定配置文件即可。
+
+```shell
+# config-xx.json
+node index.js -c config-xx.json
+```
+
 ## 依赖
 
 ```
